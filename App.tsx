@@ -27,6 +27,9 @@ const App: React.FC = () => {
   // Sound Check State
   const [soundTestStep, setSoundTestStep] = useState(0);
 
+  // Victory State
+  const [winner, setWinner] = useState<'aff' | 'neg' | null>(null);
+
   // Refs
   const lastTickRef = useRef<number>(0);
   const animationFrameRef = useRef<number | null>(null);
@@ -40,6 +43,10 @@ const App: React.FC = () => {
     // Stop any running timer when stage changes
     setIsRunning(false);
     setActiveSide('none');
+    // Reset winner when moving between stages (though mostly relevant when entering victory stage)
+    if (currentStage.type !== 'victory') {
+        setWinner(null);
+    }
 
     if (['normal', 'free_debate', 'dual_debate'].includes(currentStage.type)) {
         if (currentStage.type === 'normal') {
@@ -158,6 +165,16 @@ const App: React.FC = () => {
      }
   };
 
+  // --- Helper for Visual Cues (Subtle changes) ---
+  const getVisualCueClass = (isActive: boolean, time: number) => {
+    if (!isActive) return '';
+    // Critical (<=5s): Red Glow + Pulse + Ring
+    if (time <= 5 && time > 0) return 'shadow-[0_0_60px_rgba(239,68,68,0.6)] bg-red-100 ring-4 ring-red-200 ring-opacity-50'; 
+    // Warning (<=30s): Yellow/Amber Glow
+    if (time <= 30 && time > 0) return 'shadow-[0_0_40px_rgba(234,179,8,0.4)] bg-yellow-50'; 
+    return '';
+  };
+
   // --- Keyboard Controls ---
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -169,6 +186,7 @@ const App: React.FC = () => {
                 if (stageIndex > 0) {
                     setStageIndex(prev => prev - 1);
                     setSoundTestStep(0);
+                    setWinner(null); // Reset winner if going back
                 }
                 break;
             case 'KeyM': // Next
@@ -191,16 +209,20 @@ const App: React.FC = () => {
                     if (!isRunning) setIsRunning(true);
                 }
                 break;
-            case 'KeyQ': // Start Aff
+            case 'KeyQ': // Start Aff OR Select Aff Winner
                 if (['normal', 'free_debate', 'dual_debate'].includes(currentStage.type)) {
                    setActiveSide('aff');
                    setIsRunning(true);
+                } else if (currentStage.type === 'victory' && !winner) {
+                   setWinner('aff');
                 }
                 break;
-            case 'KeyW': // Start Neg
+            case 'KeyW': // Start Neg OR Select Neg Winner
                 if (['normal', 'free_debate', 'dual_debate'].includes(currentStage.type)) {
                    setActiveSide('neg');
                    setIsRunning(true);
+                } else if (currentStage.type === 'victory' && !winner) {
+                   setWinner('neg');
                 }
                 break;
         }
@@ -208,7 +230,7 @@ const App: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [stageIndex, currentStage, isRunning]);
+  }, [stageIndex, currentStage, isRunning, winner]); // Added winner to dependency
 
 
   // --- Render Views ---
@@ -340,6 +362,65 @@ const App: React.FC = () => {
       );
   }
 
+  // 5. VICTORY SCREEN
+  if (currentStage.type === 'victory') {
+     return (
+        <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center relative overflow-hidden">
+            {/* Background Phantom Logo */}
+            <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none z-0">
+                <img src={matchInfo.logoUrl || DEFAULT_LOGO} className="w-[800px] h-[800px] object-contain" alt="bg" />
+            </div>
+
+            {winner ? (
+                 // RESULT DISPLAY
+                 <div className="z-10 text-center space-y-8 animate-fade-in-up">
+                      <div className="text-2xl text-gray-500 font-serif mb-4">本场比赛获胜方</div>
+                      <h1 className="text-7xl font-bold text-zzu-red font-serif drop-shadow-lg">
+                          {winner === 'aff' ? (matchInfo.affSchool || '正方') : (matchInfo.negSchool || '反方')}
+                      </h1>
+                      <div className="w-32 h-1 bg-zzu-red mx-auto mt-6 mb-6"></div>
+                      <div className="text-xl text-gray-600 font-serif">
+                          恭喜 {winner === 'aff' ? (matchInfo.affSchool || '正方') : (matchInfo.negSchool || '反方')} 取得胜利
+                      </div>
+                  </div>
+            ) : (
+                // SELECTION SCREEN
+                <div className="z-10 flex flex-col items-center w-full">
+                    <h1 className="text-4xl font-serif font-bold text-zzu-dark mb-16">比赛结束，请选择获胜方</h1>
+                    
+                    <div className="flex gap-12">
+                        <button 
+                            onClick={() => setWinner('aff')}
+                            className="w-80 h-96 bg-white/90 backdrop-blur-sm rounded-xl shadow-xl hover:shadow-2xl transition-all hover:-translate-y-2 border-t-8 border-zzu-red flex flex-col items-center justify-center group cursor-pointer"
+                        >
+                            <div className="text-4xl font-serif font-bold text-gray-800 group-hover:text-zzu-red transition-colors mb-4">
+                                {matchInfo.affSchool || '正方'}
+                            </div>
+                            <div className="text-gray-400 mb-2">点击选择</div>
+                            <div className="text-xs text-gray-300 font-mono">[Q]</div>
+                        </button>
+
+                        <button 
+                            onClick={() => setWinner('neg')}
+                            className="w-80 h-96 bg-white/90 backdrop-blur-sm rounded-xl shadow-xl hover:shadow-2xl transition-all hover:-translate-y-2 border-t-8 border-gray-800 flex flex-col items-center justify-center group cursor-pointer"
+                        >
+                             <div className="text-4xl font-serif font-bold text-gray-800 group-hover:text-black transition-colors mb-4">
+                                {matchInfo.negSchool || '反方'}
+                            </div>
+                            <div className="text-gray-400 mb-2">点击选择</div>
+                            <div className="text-xs text-gray-300 font-mono">[W]</div>
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            <div className="absolute bottom-4 left-0 w-full text-center text-gray-400 text-xs font-mono z-20">
+                  {winner ? '[N] 返回重新选择' : '[N] 返回上一环节 &nbsp;&nbsp; [Q] 选择正方 &nbsp;&nbsp; [W] 选择反方'}
+            </div>
+        </div>
+     );
+  }
+
   // 4. MAIN TIMER
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col relative overflow-hidden">
@@ -394,7 +475,8 @@ const App: React.FC = () => {
             </div>
 
             {/* Left Side (Aff) */}
-            <div className={`w-1/2 border-r border-gray-200 flex flex-col items-center justify-center relative transition-colors duration-500 z-10 ${activeSide === 'aff' ? 'bg-red-50' : 'bg-transparent'}`}>
+            {/* ADDED CONDITIONAL VISUAL CUE CLASSES FOR SUBTLE BACKGROUND CHANGE */}
+            <div className={`w-1/2 border-r border-gray-200 flex flex-col items-center justify-center relative transition-all duration-500 z-10 ${activeSide === 'aff' ? 'bg-red-50' : 'bg-transparent'} ${getVisualCueClass(activeSide === 'aff', timeAff)}`}>
                 <div className="absolute top-4 left-0 w-full text-center px-4">
                      <div className={`text-3xl font-serif font-bold whitespace-pre-wrap ${activeSide === 'aff' ? 'text-zzu-red scale-110 transition-transform' : 'text-gray-400'}`}>
                          {currentStage.affTitle}
@@ -414,7 +496,8 @@ const App: React.FC = () => {
             </div>
 
             {/* Right Side (Neg) */}
-            <div className={`w-1/2 flex flex-col items-center justify-center relative transition-colors duration-500 z-10 ${activeSide === 'neg' ? 'bg-red-50' : 'bg-transparent'}`}>
+            {/* ADDED CONDITIONAL VISUAL CUE CLASSES FOR SUBTLE BACKGROUND CHANGE */}
+            <div className={`w-1/2 flex flex-col items-center justify-center relative transition-all duration-500 z-10 ${activeSide === 'neg' ? 'bg-red-50' : 'bg-transparent'} ${getVisualCueClass(activeSide === 'neg', timeNeg)}`}>
                 <div className="absolute top-4 left-0 w-full text-center px-4">
                      <div className={`text-3xl font-serif font-bold whitespace-pre-wrap ${activeSide === 'neg' ? 'text-zzu-red scale-110 transition-transform' : 'text-gray-400'}`}>
                          {currentStage.negTitle}

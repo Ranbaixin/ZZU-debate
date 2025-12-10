@@ -35,8 +35,6 @@ const Clock: React.FC<ClockProps> = ({ totalTime, currentTime, isActive, isFinis
   // 3. Define Red Path (Remaining Time)
   // Logic: Pointer moves CCW (12 -> 11 -> 10).
   // The Red Area (Remaining) is the sector from Top (12) sweeping Clockwise to the Pointer.
-  // Example: 1 hour passed. Pointer at 11. Red Area is 12->1->...->11 (330 degrees).
-  // Example: 9 hours passed. Pointer at 3. Red Area is 12->1->2->3 (90 degrees).
   
   const isFull = progress <= 0.001;
   const isEmpty = progress >= 0.999;
@@ -65,6 +63,20 @@ const Clock: React.FC<ClockProps> = ({ totalTime, currentTime, isActive, isFinis
   // Pointer moves Counter-Clockwise, so negative rotation
   const pointerRotationDeg = -360 * progress;
 
+  // --- Dynamic Color Logic for Warning Cues ---
+  let sectorColor = "#A91D32"; // Default ZZU Red
+  let digitColorClass = isActive ? 'text-zzu-dark' : 'text-gray-300';
+  
+  if (isActive && currentTime > 0) {
+      if (currentTime <= 5) {
+          sectorColor = "#DC2626"; // Critical Red (Red-600)
+          digitColorClass = 'text-red-600 animate-pulse';
+      } else if (currentTime <= 30) {
+          sectorColor = "#D97706"; // Warning Amber (Amber-600)
+          digitColorClass = 'text-amber-600';
+      }
+  }
+
   return (
     <div className="flex flex-col items-center">
       {/* 1. The Analog Clock Dial */}
@@ -73,12 +85,12 @@ const Clock: React.FC<ClockProps> = ({ totalTime, currentTime, isActive, isFinis
             {/* Background Track (Light Gray) */}
             <circle cx={center} cy={center} r={radius} fill="#f3f4f6" stroke="#e5e7eb" strokeWidth="2" /> 
 
-            {/* Red Sector (Time Remaining) */}
+            {/* Colored Sector (Time Remaining) */}
             <path
                 d={redPathD}
-                fill="#A91D32" 
-                // Ensure no transition for instant response
-                style={{ transition: 'none' }}
+                fill={sectorColor}
+                // Transition for smooth color change
+                style={{ transition: 'fill 0.5s ease' }}
             />
             
             {/* Ticks */}
@@ -134,7 +146,7 @@ const Clock: React.FC<ClockProps> = ({ totalTime, currentTime, isActive, isFinis
       {/* 2. The Digital Display (Outside and Below) */}
       <div className="mt-4 flex flex-col items-center">
         {/* Large Digital Numbers */}
-        <div className={`digit-font text-6xl font-bold tracking-tighter leading-none ${isActive ? 'text-zzu-dark' : 'text-gray-300'} ${(currentTime <= 10 && isActive) ? 'text-red-600 animate-pulse' : ''}`}>
+        <div className={`digit-font text-6xl font-bold tracking-tighter leading-none transition-colors duration-300 ${digitColorClass}`}>
              {currentTime.toFixed(1)}<span className="text-2xl font-serif text-gray-400 font-normal ml-1">s</span>
         </div>
         

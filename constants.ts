@@ -46,6 +46,9 @@ export const DEBATE_FLOW: DebateStage[] = [
   
   // 14. 正方四辩总结陈词 (4m)
   { id: 's14', label: '总结陈词\n正方四辩', affTitle: '正方四辩\n总结', negTitle: '请聆听', time: 240, type: 'normal', activeSide: 'aff' },
+
+  // 15. 比赛结束，选择获胜方
+  { id: 's15', label: '比赛结束\n结果公布', time: 0, type: 'victory' },
 ];
 
 export const DEFAULT_LOGO = "https://upload.wikimedia.org/wikipedia/zh/thumb/1/18/Zhengzhou_University_logo.svg/1200px-Zhengzhou_University_logo.svg.png";

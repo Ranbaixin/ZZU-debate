@@ -4,7 +4,7 @@ export interface DebateStage {
   affTitle?: string;
   negTitle?: string;
   time: number; // in seconds
-  type: 'setup' | 'intro' | 'sound_check' | 'normal' | 'free_debate' | 'dual_debate';
+  type: 'setup' | 'intro' | 'sound_check' | 'normal' | 'free_debate' | 'dual_debate' | 'victory';
   activeSide?: 'aff' | 'neg' | 'both';
 }
 
