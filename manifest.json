@@ -1,0 +1,20 @@
+{
+  "short_name": "辩论计时",
+  "name": "郑州大学辩论计时系统",
+  "icons": [
+    {
+      "src": "https://upload.wikimedia.org/wikipedia/zh/thumb/1/18/Zhengzhou_University_logo.svg/192px-Zhengzhou_University_logo.svg.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://upload.wikimedia.org/wikipedia/zh/thumb/1/18/Zhengzhou_University_logo.svg/512px-Zhengzhou_University_logo.svg.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#A91D32",
+  "background_color": "#ffffff"
+}
